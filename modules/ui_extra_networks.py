@@ -124,6 +124,10 @@ class ExtraNetworksPage:
         if onclick is None:
             onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
 
+        height = f"height: {shared.opts.extra_networks_card_height}em;" if shared.opts.extra_networks_card_height else ''
+        width = f"width: {shared.opts.extra_networks_card_width}em;" if shared.opts.extra_networks_card_width else ''
+        background_image = f"background-image: url(\"{html.escape(preview)}\");" if preview else ''
+
         metadata_button = ""
         metadata = item.get("metadata")
         if metadata:
@@ -131,7 +135,7 @@ class ExtraNetworksPage:
             metadata_button = f"<div class='metadata-button' title='Show metadata' onclick={metadata_onclick}></div>"
 
         args = {
-            "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
+            "style": f"'{height}{width}{background_image}'",
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
@@ -220,6 +224,7 @@ def create_ui(container, button, tabname):
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
+    button_close = gr.Button('Close', elem_id=tabname+"_extra_close")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
@@ -230,6 +235,7 @@ def create_ui(container, button, tabname):
 
     state_visible = gr.State(value=False)
     button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
+    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     def refresh():
         res = []
