@@ -231,10 +231,10 @@ def create_ui(container, button, tabname):
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
-        return is_visible, gr.update(visible=is_visible)
+        return is_visible, gr.update(visible=is_visible), gr.update(variant=("primary" if is_visible else "tool"))
 
     state_visible = gr.State(value=False)
-    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
+    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
     button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     def refresh():
