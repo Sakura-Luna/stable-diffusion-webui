@@ -235,7 +235,7 @@ def create_ui(container, button, tabname):
 
     state_visible = gr.State(value=False)
     button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
-    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
+    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
 
     def refresh():
         res = []
