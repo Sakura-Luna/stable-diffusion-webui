@@ -56,14 +56,14 @@ function canBeTranslated(node, text){
 function getTranslation(text){
     if(! text) return undefined
 
-    if(translated_lines[text] === undefined){
-        original_lines[text] = 1
-    }
+//    if(translated_lines[text] === undefined){
+//        original_lines[text] = 1
+//    }
 
     tl = localization[text]
-    if(tl !== undefined){
-        translated_lines[tl] = 1
-    }
+//    if(tl !== undefined){
+//        translated_lines[tl] = 1
+//    }
 
     return tl
 }
