@@ -41,7 +41,7 @@ def convert_diffusers_name_to_compvis(key, is_sd2):
                 return f"model_transformer_resblocks_{m[0]}_{m[1].replace('mlp_fc1', 'mlp_c_fc')}"
             elif 'mlp_fc2' in m[1]:
                 return f"model_transformer_resblocks_{m[0]}_{m[1].replace('mlp_fc2', 'mlp_c_proj')}"
-            elif 'self_attn':
+            else:
                 return f"model_transformer_resblocks_{m[0]}_{m[1].replace('self_attn', 'attn')}"
 
         return f"transformer_text_model_encoder_layers_{m[0]}_{m[1]}"
