@@ -1,5 +1,6 @@
 ### About
 This is a forked project, working on Gradio 3.16.2.
+This fork contains some PRs that haven't yet been merged into the upstream. Thank you for your contributions.
 
 # Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
