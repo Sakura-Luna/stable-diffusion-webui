@@ -164,6 +164,7 @@ class CFGDenoiser(torch.nn.Module):
         cfg_after_cfg_callback(after_cfg_callback_params)
         if after_cfg_callback_params.output_altered:
             denoised = after_cfg_callback_params.x
+
         self.step += 1
 
         return denoised
