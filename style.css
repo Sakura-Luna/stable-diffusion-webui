@@ -733,6 +733,23 @@ canvas[key="mask"] {
 #img2img_settings {
     padding-bottom: 0.9em;
 }
+#txt2img_settings, #img2img_settings{
+    overflow: auto;
+    max-height: 600px;
+
+    &::-webkit-scrollbar {
+       width: 0.5em;
+       height: 0.5em;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: rgba(255,255,255,.1);
+        border-radius: 3px;
+        &:hover {
+            background: rgba(255,255,255,.2);
+        }
+   }
+}
 
 #img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form, #train_tabs div.gr-form .gr-form{
     border: none;
