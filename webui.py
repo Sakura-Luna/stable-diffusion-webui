@@ -270,6 +270,7 @@ def webui():
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
             inbrowser=cmd_opts.autolaunch,
+            favicon_path='icon.svg',
             prevent_thread_lock=True
         )
         # after initial launch, disable --autolaunch for subsequent restarts
