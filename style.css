@@ -142,6 +142,7 @@
     min-width: 0 !important;
     max-width: 8em !important;
     margin-right: 1em;
+    margin-top: 0.35em;
     gap: 0;
 }
 #interrogate, #deepbooru{
@@ -195,6 +196,10 @@ button{
 
 .overflow-hidden, .gr-panel{
     overflow: visible !important;
+}
+
+.gr-panel {
+    padding: 5px;
 }
 
 #x_type, #y_type{
@@ -745,10 +750,11 @@ canvas[key="mask"] {
     &::-webkit-scrollbar-thumb {
         background-color: rgba(255,255,255,.1);
         border-radius: 3px;
-        &:hover {
-            background: rgba(255,255,255,.2);
-        }
    }
+}
+#txt2img_settings::-webkit-scrollbar-thumb:hover,
+#img2img_settings::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, .2);
 }
 
 #img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form, #train_tabs div.gr-form .gr-form{
