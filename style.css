@@ -181,6 +181,10 @@ ul.list-none{
     background: transparent;
 }
 
+.gap-4 {
+    gap: 0.45em;
+}
+
 .my-4{
     margin-top: 0;
     margin-bottom: 0;
