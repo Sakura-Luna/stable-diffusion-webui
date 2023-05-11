@@ -87,8 +87,9 @@ def progressapi(req: ProgressRequest):
         image = shared.state.current_image
         if image is not None:
             buffered = io.BytesIO()
-            image.save(buffered, format="png")
-            live_preview = 'data:image/png;base64,' + base64.b64encode(buffered.getvalue()).decode("ascii")
+            image.save(buffered, format=opts.live_previews_format)
+            base64_image = base64.b64encode(buffered.getvalue()).decode('ascii')
+            live_preview = f"data:image/{opts.live_previews_format};base64,{base64_image}"
             id_live_preview = shared.state.id_live_preview
         else:
             live_preview = None
