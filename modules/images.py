@@ -13,22 +13,22 @@ import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
-from fonts.ttf import Roboto
 import string
 import json
 import hashlib
 
 from modules import sd_samplers, shared, script_callbacks, errors
-from modules.shared import opts, cmd_opts
+from modules.paths_internal import roboto_ttf_file
+from modules.shared import opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
 def get_font(fontsize: int):
     try:
-        return ImageFont.truetype(opts.font or Roboto, fontsize)
+        return ImageFont.truetype(opts.font or roboto_ttf_file, fontsize)
     except Exception:
-        return ImageFont.truetype(Roboto, fontsize)
+        return ImageFont.truetype(roboto_ttf_file, fontsize)
 
 
 def image_grid(imgs, batch_size=1, rows=None):
@@ -150,7 +150,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
         return lines
 
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
-        for i, line in enumerate(lines):
+        for line in lines:
             fnt = initial_fnt
             fontsize = initial_fontsize
             while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
@@ -262,9 +262,12 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
 
         if scale > 1.0:
             upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
-            assert len(upscalers) > 0, f"could not find upscaler named {upscaler_name}"
+            if len(upscalers) == 0:
+                upscaler = shared.sd_upscalers[0]
+                print(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
+            else:
+                upscaler = upscalers[0]
 
-            upscaler = upscalers[0]
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
 
         if im.width != w or im.height != h:
@@ -385,13 +388,13 @@ class FilenameGenerator:
         time_format = args[0] if len(args) > 0 and args[0] != "" else self.default_time_format
         try:
             time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
-        except pytz.exceptions.UnknownTimeZoneError as _:
+        except pytz.exceptions.UnknownTimeZoneError:
             time_zone = None
 
         time_zone_time = time_datetime.astimezone(time_zone)
         try:
             formatted_time = time_zone_time.strftime(time_format)
-        except (ValueError, TypeError) as _:
+        except (ValueError, TypeError):
             formatted_time = time_zone_time.strftime(self.default_time_format)
 
         return sanitize_filename_part(formatted_time, replace_spaces=False)
@@ -441,14 +444,14 @@ def get_next_sequence_number(path, basename):
     """
     result = -1
     if basename != '':
-        basename = basename + "-"
+        basename = f"{basename}-"
 
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            parts = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
-                result = max(int(l[0]), result)
+                result = max(int(parts[0]), result)
             except ValueError:
                 pass
 
@@ -540,7 +543,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     def _atomically_save_image(image_to_save, filename_without_extension, extension):
         # save image with .tmp extension to avoid race condition when another process detects new image in the directory
-        temp_file_path = filename_without_extension + ".tmp"
+        temp_file_path = f"{filename_without_extension}.tmp"
         image_format = Image.registered_extensions()[extension]
 
         if extension.lower() == '.png':
