@@ -322,10 +322,31 @@ input[type="range"]{
   opacity: 1 !important;
 }
 
+#settings span{
+    color: var(--body-text-color);
+}
+
+#settings .gradio-textbox, #settings .gradio-slider, #settings .gradio-number, #settings .gradio-dropdown, #settings .gradio-checkboxgroup{
+    margin-top: 0.75em;
+}
+
+.gradio-textbox .settings-comment, .gradio-slider .settings-comment, .gradio-number .settings-comment, .gradio-dropdown .settings-comment, .gradio-checkboxgroup .settings-comment {
+    display: inline
+}
+
+.settings-comment a{
+    text-decoration: underline;
+}
+
+.settings-comment .info{
+    opacity: 0.75;
+}
+
 /* more gradio's garbage cleanup */
 .min-h-\[4rem\] { min-height: unset !important; }
 .min-h-\[6rem\] { min-height: unset !important; }
 
+/* live preview */
 .progressDiv{
     position: relative;
     height: 20px;

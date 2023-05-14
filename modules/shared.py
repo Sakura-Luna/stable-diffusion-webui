@@ -4,7 +4,6 @@ import os
 import sys
 import time
 
-from PIL import Image
 import gradio as gr
 import tqdm
 
@@ -12,7 +11,7 @@ import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import localization, extensions, script_loading, errors, ui_components, shared_items, cmd_args
+from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
 from ldm.models.diffusion.ddpm import LatentDiffusion
 
@@ -20,8 +19,8 @@ demo = None
 
 parser = cmd_args.parser
 
-script_loading.preload_extensions(extensions.extensions_dir, parser)
-script_loading.preload_extensions(extensions.extensions_builtin_dir, parser)
+script_loading.preload_extensions(extensions_dir, parser)
+script_loading.preload_extensions(extensions_builtin_dir, parser)
 
 if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
     cmd_opts = parser.parse_args()
@@ -183,8 +182,9 @@ interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
 
+
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after=''):
         self.default = default
         self.label = label
         self.component = component
@@ -193,9 +193,27 @@ class OptionInfo:
         self.section = section
         self.refresh = refresh
 
+        self.comment_before = comment_before
+        """HTML text that will be added after label in UI"""
+
+        self.comment_after = comment_after
+        """HTML text that will be added before label in UI"""
+
+    def link(self, label, url):
+        self.comment_before += f"[<a href='{url}' target='_blank'>{label}</a>]"
+        return self
+
+    def js(self, label, js_func):
+        self.comment_before += f"[<a onclick='{js_func}(); return false'>{label}</a>]"
+        return self
+
+    def info(self, info):
+        self.comment_after += f"<span class='info'>({info})</span>"
+        return self
+
 
 def options_section(section_identifier, options_dict):
-    for k, v in options_dict.items():
+    for v in options_dict.values():
         v.section = section_identifier
 
     return options_dict
@@ -224,7 +242,7 @@ options_templates = {}
 options_templates.update(options_section(('saving-images', "Saving images/grids"), {
     "samples_save": OptionInfo(True, "Always save all generated images"),
     "samples_format": OptionInfo('png', 'File format for images'),
-    "samples_filename_pattern": OptionInfo("", "Images filename pattern", component_args=hide_dirs),
+    "samples_filename_pattern": OptionInfo("", "Images filename pattern", component_args=hide_dirs).link("wiki", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Images-Filename-Name-and-Subdirectory"),
     "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
 
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
@@ -249,7 +267,6 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process in extras tab"),
     "use_upscaler_name_as_suffix": OptionInfo(False, "Use upscaler name as filename suffix in the extras tab"),
     "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
-    "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),
 
     "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
     "clean_temp_dir_at_start": OptionInfo(False, "Cleanup non-default temporary directory when starting webui"),
@@ -271,7 +288,7 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
     "save_to_dirs": OptionInfo(True, "Save images to a subdirectory"),
     "grid_save_to_dirs": OptionInfo(True, "Save grids to a subdirectory"),
     "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
-    "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
+    "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs).link("wiki", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Images-Filename-Name-and-Subdirectory"),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
 }))
 
@@ -356,10 +373,10 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_default_view": OptionInfo("cards", "Default view for Extra Networks", gr.Dropdown, {"choices": ["cards", "thumbs"]}),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "extra_networks_card_width": OptionInfo(0, "Card width for Extra Networks (em)"),
-    "extra_networks_card_height": OptionInfo(0, "Card height for Extra Networks (em)"),
+    "extra_networks_card_width": OptionInfo(0, "Card width for Extra Networks (px)"),
+    "extra_networks_card_height": OptionInfo(0, "Card height for Extra Networks (px)"),
     "extra_networks_add_text_separator": OptionInfo(" ", "Extra text to add before <...> when adding extra network to prompt"),
-    "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": [""] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
+    "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None", *hypernetworks]}, refresh=reload_hypernetworks),
 }))
 
 options_templates.update(options_section(('ui', "User interface"), {
@@ -422,6 +439,7 @@ options_templates.update(options_section((None, "Hidden options"), {
     "disabled_extensions": OptionInfo([], "Disable those extensions"),
     "sd_checkpoint_hash": OptionInfo("", "SHA256 hash of the current checkpoint"),
 }))
+
 
 options_templates.update()
 
@@ -530,7 +548,9 @@ class Options:
             func()
 
     def dumpjson(self):
-        d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
+        d = {k: self.data.get(k, v.default) for k, v in self.data_labels.items()}
+        d["_comments_before"] = {k: v.comment_before for k, v in self.data_labels.items() if v.comment_before is not None}
+        d["_comments_after"] = {k: v.comment_after for k, v in self.data_labels.items() if v.comment_after is not None}
         return json.dumps(d)
 
     def add_option(self, key, info):
@@ -541,11 +561,11 @@ class Options:
 
         section_ids = {}
         settings_items = self.data_labels.items()
-        for k, item in settings_items:
+        for _, item in settings_items:
             if item.section not in section_ids:
                 section_ids[item.section] = len(section_ids)
 
-        self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
+        self.data_labels = dict(sorted(settings_items, key=lambda x: section_ids[x[1].section]))
 
     def cast_value(self, key, value):
         """casts an arbitrary to the same type as this setting's value with key
