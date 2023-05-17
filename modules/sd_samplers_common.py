@@ -30,9 +30,8 @@ def single_sample_to_image(sample, approximation=None):
         approximation = approximation_indexes.get(opts.show_progress_type, 1)
 
     if approximation == 1:
-        x_sample = sd_vae_taesd.decode()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
-        x_sample = sd_vae_taesd.TAESD.unscale_latents(x_sample)
-        x_sample = torch.clamp((x_sample * 0.25) + 0.5, 0, 1)
+        x_sample = sd_vae_taesd.TAESD.unscale_latents(sample * 0.25 + 0.5)
+        x_sample = sd_vae_taesd.decode()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
     else:
         if approximation == 3:
             x_sample = sd_vae_approx.cheap_approximation(sample)
@@ -40,9 +39,10 @@ def single_sample_to_image(sample, approximation=None):
             x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
         else:
             x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
-        x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
 
-    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+        x_sample = (x_sample + 1.0) / 2.0
+
+    x_sample = 255. * np.moveaxis(x_sample.clamp(min=0.0, max=1.0).cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)
     return Image.fromarray(x_sample)
 
