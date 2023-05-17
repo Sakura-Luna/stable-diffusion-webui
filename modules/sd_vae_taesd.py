@@ -61,16 +61,25 @@ class TAESD(nn.Module):
         return x.sub(TAESD.latent_shift).mul(2 * TAESD.latent_magnitude)
 
 
+def download_model(model_path):
+    model_url = 'https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth'
+
+    if not os.path.exists(model_path):
+        print(f'Downloading TAESD decoder. The preview will not be displayed until the download is complete.')
+        torch.hub.download_url_to_file(model_url, model_path)
+
+
 def decode():
     global sd_vae_taesd
 
     if sd_vae_taesd is None:
         model_path = os.path.join(paths_internal.models_path, "VAE-approx", "taesd_decoder.pth")
+        download_model(model_path)
         if os.path.exists(model_path):
             sd_vae_taesd = TAESD(model_path)
             sd_vae_taesd.eval()
             sd_vae_taesd.to(devices.device, devices.dtype)
         else:
-            raise FileNotFoundError('Tiny AE model not found')
+            raise FileNotFoundError('TAESD model not found')
 
     return sd_vae_taesd.decoder
