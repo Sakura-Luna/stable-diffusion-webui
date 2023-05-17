@@ -30,7 +30,7 @@ def single_sample_to_image(sample, approximation=None):
         approximation = approximation_indexes.get(opts.show_progress_type, 1)
 
     if approximation == 1:
-        x_sample = sd_vae_taesd.TAESD.unscale_latents(sample * 0.25 + 0.5)
+        x_sample = sample * 1.5
         x_sample = sd_vae_taesd.decode()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
     else:
         if approximation == 3:
