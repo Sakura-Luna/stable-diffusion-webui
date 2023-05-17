@@ -75,7 +75,7 @@
     object-fit: scale-down;
 }
 #txt2img_actions_column, #img2img_actions_column {
-	margin: 0.35rem 0.75rem 0.35rem 0;	
+	margin: 0.35rem 0.75rem 0.35rem 0;
 }
 #script_list {
     padding: .625rem .75rem 0 .625rem;
@@ -263,6 +263,13 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
 
 #txt2img_column_batch, #img2img_column_batch{
     min-width: min(13.5em, 100%) !important;
+}
+
+div.dimensions-tools{
+    min-width: 0 !important;
+    max-width: fit-content;
+    flex-direction: column;
+    place-content: center;
 }
 
 #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
