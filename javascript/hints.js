@@ -9,7 +9,6 @@ titles = {
 	"UniPC": "Unified Predictor-Corrector Framework for Fast Sampling of Diffusion Models",
 	"DPM adaptive": "Ignores step count - uses a number of steps determined by the CFG and resolution", 
 
-    "\u{1F4D0}": "Auto detect size from img2img",
 	"Batch count": "How many batches of images to create (has no impact on generation performance or VRAM usage)",
 	"Batch size": "How many image to create in a single batch (increases generation performance at cost of higher VRAM usage)",
     "CFG Scale": "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results",
@@ -23,6 +22,7 @@ titles = {
     "\u{1f4cb}": "Apply selected styles to current prompt",
     "\u{1f4d2}": "Paste available values into the field",
     "\u{1f3b4}": "Show extra networks",
+    "\u{1F4D0}": "Auto detect size from input image",
 
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",

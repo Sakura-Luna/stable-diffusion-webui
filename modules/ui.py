@@ -586,7 +586,7 @@ def create_ui():
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
-            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
@@ -757,9 +757,8 @@ def create_ui():
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
-                            with gr.Column(elem_id="img2img_dimensions_row", elem_classes="dimensions-tools"):
-                                detect_image_size_btn = ToolButton(value=detect_image_size_symbol, elem_id="img2img_detect_image_size_btn")
-                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                            detect_image_size_btn = ToolButton(value=detect_image_size_symbol, elem_id="img2img_detect_image_size_btn")
+                            res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
 
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="img2img_column_batch"):
@@ -908,7 +907,7 @@ def create_ui():
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
 
-            res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('img2img')}", inputs=None, outputs=None, show_progress=False)
+            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
             detect_image_size_btn.click(
                 fn=lambda w, h, _: (w or gr.update(), h or gr.update()),
                 _js="currentImg2imgSourceResolution",
