@@ -120,7 +120,7 @@ def normalize_git_url(url):
     return url
 
 
-def install_extension_from_url(dirname, url):
+def install_extension_from_url(dirname, url, branch_name=None):
     check_access()
 
     assert url, 'No URL specified'
@@ -141,10 +141,17 @@ def install_extension_from_url(dirname, url):
 
     try:
         shutil.rmtree(tmpdir, True)
-
-        repo = git.Repo.clone_from(url, tmpdir)
-        repo.remote().fetch()
-
+        if not branch_name:
+            # if no branch is specified, use the default branch
+            with git.Repo.clone_from(url, tmpdir, filter=['blob:none']) as repo:
+                repo.remote().fetch()
+                for submodule in repo.submodules:
+                    submodule.update()
+        else:
+            with git.Repo.clone_from(url, tmpdir, filter=['blob:none'], branch=branch_name) as repo:
+                repo.remote().fetch()
+                for submodule in repo.submodules:
+                    submodule.update()
         try:
             os.rename(tmpdir, target_dir)
         except OSError as err:
