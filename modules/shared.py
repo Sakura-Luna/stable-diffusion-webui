@@ -202,13 +202,13 @@ def options_section(section_identifier, options_dict):
 
 
 def list_checkpoint_tiles():
-    import modules.sd_models
-    return modules.sd_models.checkpoint_tiles()
+    from modules.sd_models import checkpoint_tiles
+    return checkpoint_tiles()
 
 
 def refresh_checkpoints():
-    import modules.sd_models
-    return modules.sd_models.list_models()
+    from modules.sd_models import list_models
+    return list_models()
 
 
 def list_samplers():
@@ -584,15 +584,15 @@ class Shared(sys.modules[__name__].__class__):
 
     @property
     def sd_model(self):
-        import modules.sd_models
+        from modules.sd_models import model_data
 
-        return modules.sd_models.model_data.get_sd_model()
+        return model_data.get_sd_model()
 
     @sd_model.setter
     def sd_model(self, value):
-        import modules.sd_models
+        from modules.sd_models import model_data
 
-        modules.sd_models.model_data.set_sd_model(value)
+        model_data.set_sd_model(value)
 
 
 sd_model: LatentDiffusion = None  # this var is here just for IDE's type checking; it cannot be accessed because the class field above will be accessed instead
