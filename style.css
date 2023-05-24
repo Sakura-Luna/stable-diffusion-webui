@@ -859,6 +859,7 @@ footer {
 }
 
 [id*='img2img_copy_to_'] > button {
+    border-radius: 0.5em !important;
 }
 
 [id*='img2img_label_copy_to_'] {
