@@ -346,6 +346,7 @@ def xformers_attention_forward(self, x, context=None, mask=None):
     out = rearrange(out, 'b n h d -> b n (h d)', h=h)
     return self.to_out(out)
 
+
 # Based on Diffusers usage of scaled dot product attention from https://github.com/huggingface/diffusers/blob/c7da8fd23359a22d0df2741688b5b4f33c26df21/src/diffusers/models/cross_attention.py
 # The scaled_dot_product_attention_forward function contains parts of code under Apache-2.0 license listed under Scaled Dot Product Attention in the Licenses section of the web UI interface
 def scaled_dot_product_attention_forward(self, x, context=None, mask=None):
@@ -388,9 +389,6 @@ def scaled_dot_product_attention_forward(self, x, context=None, mask=None):
     hidden_states = self.to_out[1](hidden_states)
     return hidden_states
 
-def scaled_dot_product_no_mem_attention_forward(self, x, context=None, mask=None):
-    with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
-        return scaled_dot_product_attention_forward(self, x, context, mask)
 
 def cross_attention_attnblock_forward(self, x):
         h_ = x
@@ -449,7 +447,8 @@ def cross_attention_attnblock_forward(self, x):
         h3 += x
 
         return h3
-    
+
+
 def xformers_attnblock_forward(self, x):
     try:
         h_ = x
@@ -473,6 +472,7 @@ def xformers_attnblock_forward(self, x):
     except NotImplementedError:
         return cross_attention_attnblock_forward(self, x)
 
+
 def sdp_attnblock_forward(self, x):
     h_ = x
     h_ = self.norm(h_)
@@ -493,9 +493,6 @@ def sdp_attnblock_forward(self, x):
     out = self.proj_out(out)
     return x + out
 
-def sdp_no_mem_attnblock_forward(self, x):
-    with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
-        return sdp_attnblock_forward(self, x)
 
 def sub_quad_attnblock_forward(self, x):
     h_ = x

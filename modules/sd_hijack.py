@@ -44,12 +44,9 @@ def apply_optimizations():
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
         optimization_method = 'xformers'
-    elif cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
-        print("Applying scaled dot product cross attention optimization (without memory efficient attention).")
-        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_no_mem_attention_forward
-        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_no_mem_attnblock_forward
-        optimization_method = 'sdp-no-mem'
-    elif cmd_opts.opt_sdp_attention and can_use_sdp:
+    elif cmd_opts.opt_sdp_attention or cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
+        if cmd_opts.opt_sdp_no_mem_attention:
+            print("The no-mem is no longer needed, make sure you are running PyTorch 2.1+.")
         print("Applying scaled dot product cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_attnblock_forward
