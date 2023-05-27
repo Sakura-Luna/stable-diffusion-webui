@@ -3,7 +3,7 @@ from torch.nn.functional import silu
 from types import MethodType
 
 import modules.textual_inversion.textual_inversion
-from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
+from modules import devices, sd_hijack_optimizations, shared, script_callbacks, errors, sd_unet
 from modules.hypernetworks import hypernetwork
 from modules.shared import cmd_opts
 from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr
@@ -34,7 +34,7 @@ def apply_optimizations():
 
     ldm.modules.diffusionmodules.model.nonlinearity = silu
     ldm.modules.diffusionmodules.openaimodel.th = sd_hijack_unet.th
-    
+
     optimization_method = None
 
     can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention")) # not everyone has torch 2.x to use sdp
@@ -92,12 +92,12 @@ def fix_checkpoint():
 def weighted_loss(sd_model, pred, target, mean=True):
     #Calculate the weight normally, but ignore the mean
     loss = sd_model._old_get_loss(pred, target, mean=False)
-    
+
     #Check if we have weights available
     weight = getattr(sd_model, '_custom_loss_weight', None)
     if weight is not None:
         loss *= weight
-    
+
     #Return the loss, as mean if specified
     return loss.mean() if mean else loss
 
@@ -105,7 +105,7 @@ def weighted_forward(sd_model, x, c, w, *args, **kwargs):
     try:
         #Temporarily append weights to a place accessible during loss calc
         sd_model._custom_loss_weight = w
-        
+
         #Replace 'get_loss' with a weight-aware one. Otherwise we need to reimplement 'forward' completely
         #Keep 'get_loss', but don't overwrite the previous old_get_loss if it's already set
         if not hasattr(sd_model, '_old_get_loss'):
@@ -120,7 +120,7 @@ def weighted_forward(sd_model, x, c, w, *args, **kwargs):
             del sd_model._custom_loss_weight
         except AttributeError as e:
             pass
-            
+
         #If we have an old loss function, reset the loss function to the original one
         if hasattr(sd_model, '_old_get_loss'):
             sd_model.get_loss = sd_model._old_get_loss
@@ -182,9 +182,14 @@ class StableDiffusionModelHijack:
 
         self.layers = flatten(m)
 
+        if not hasattr(ldm.modules.diffusionmodules.openaimodel, 'copy_of_UNetModel_forward_for_webui'):
+            ldm.modules.diffusionmodules.openaimodel.copy_of_UNetModel_forward_for_webui = ldm.modules.diffusionmodules.openaimodel.UNetModel.forward
+
+        ldm.modules.diffusionmodules.openaimodel.UNetModel.forward = sd_unet.UNetModel_forward
+
     def undo_hijack(self, m):
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
-            m.cond_stage_model = m.cond_stage_model.wrapped 
+            m.cond_stage_model = m.cond_stage_model.wrapped
 
         elif type(m.cond_stage_model) == sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords:
             m.cond_stage_model = m.cond_stage_model.wrapped
@@ -202,6 +207,8 @@ class StableDiffusionModelHijack:
         self.apply_circular(False)
         self.layers = None
         self.clip = None
+
+        ldm.modules.diffusionmodules.openaimodel.UNetModel.forward = ldm.modules.diffusionmodules.openaimodel.copy_of_UNetModel_forward_for_webui
 
     def apply_circular(self, enable):
         if self.circular_enabled == enable:

@@ -49,6 +49,7 @@ import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
 import modules.sd_vae
+import modules.sd_unet
 import modules.txt2img
 import modules.script_callbacks
 import modules.textual_inversion.textual_inversion
@@ -135,6 +136,9 @@ def initialize():
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")
+
+    modules.sd_unet.list_unets()
+    startup_timer.record("scripts list_unets")
 
     # load model in parallel to other startup stuff
     Thread(target=lambda: shared.sd_model).start()

@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from packaging import version
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -79,21 +79,27 @@ def apply_overlay(image, paste_loc, index, overlays):
 
 
 def txt2img_image_conditioning(sd_model, x, width, height):
-    if sd_model.model.conditioning_key not in {'hybrid', 'concat'}:
-        # Dummy zero conditioning if we're not using inpainting model.
+    if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
+
+        # The "masked-image" in this case will just be all zeros since the entire image is masked.
+        image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
+        image_conditioning = sd_model.get_first_stage_encoding(sd_model.encode_first_stage(image_conditioning))
+
+        # Add the fake full 1s mask to the first dimension.
+        image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
+        image_conditioning = image_conditioning.to(x.dtype)
+
+        return image_conditioning
+
+    elif sd_model.model.conditioning_key == "crossattn-adm": # UnCLIP models
+
+        return x.new_zeros(x.shape[0], 2*sd_model.noise_augmentor.time_embed.dim, dtype=x.dtype, device=x.device)
+
+    else:
+        # Dummy zero conditioning if we're not using inpainting or unclip models.
         # Still takes up a bit of memory, but no encoder call.
         # Pretty sure we can just make this a 1x1 image since its not going to be used besides its batch size.
         return x.new_zeros(x.shape[0], 5, 1, 1, dtype=x.dtype, device=x.device)
-
-    # The "masked-image" in this case will just be all zeros since the entire image is masked.
-    image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
-    image_conditioning = sd_model.get_first_stage_encoding(sd_model.encode_first_stage(image_conditioning))
-
-    # Add the fake full 1s mask to the first dimension.
-    image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
-    image_conditioning = image_conditioning.to(x.dtype)
-
-    return image_conditioning
 
 
 class StableDiffusionProcessing:
@@ -191,6 +197,14 @@ class StableDiffusionProcessing:
 
         return conditioning_image
 
+    def unclip_image_conditioning(self, source_image):
+        c_adm = self.sd_model.embedder(source_image)
+        if self.sd_model.noise_augmentor is not None:
+            noise_level = 0 # TODO: Allow other noise levels?
+            c_adm, noise_level_emb = self.sd_model.noise_augmentor(c_adm, noise_level=repeat(torch.tensor([noise_level]).to(c_adm.device), '1 -> b', b=c_adm.shape[0]))
+            c_adm = torch.cat((c_adm, noise_level_emb), 1)
+        return c_adm
+
     def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None):
         self.is_using_inpainting_conditioning = True
 
@@ -241,6 +255,9 @@ class StableDiffusionProcessing:
 
         if self.sampler.conditioning_key in {'hybrid', 'concat'}:
             return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
+
+        if self.sampler.conditioning_key == "crossattn-adm":
+            return self.unclip_image_conditioning(source_image)
 
         # Dummy zero conditioning if we're not using inpainting or depth model.
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
@@ -580,6 +597,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             # for OSX, loading the model during sampling changes the generated picture, so it is loaded here
             if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
                 sd_vae_approx.model()
+
+            sd_unet.apply_unet()
 
         if state.job_count == -1:
             state.job_count = p.n_iter

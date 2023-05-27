@@ -109,6 +109,7 @@ callback_map = dict(
     callbacks_infotext_pasted=[],
     callbacks_script_unloaded=[],
     callbacks_before_ui=[],
+    callbacks_list_unets=[],
 )
 
 
@@ -247,6 +248,18 @@ def before_ui_callback():
             c.callback()
         except Exception:
             report_exception(c, 'before_ui')
+
+
+def list_unets_callback():
+    res = []
+
+    for c in callback_map['callbacks_list_unets']:
+        try:
+            c.callback(res)
+        except Exception:
+            report_exception(c, 'list_unets')
+
+    return res
 
 
 def add_callback(callbacks, fun):
@@ -395,3 +408,10 @@ def on_before_ui(callback):
     """register a function to be called before the UI is created."""
 
     add_callback(callback_map['callbacks_before_ui'], callback)
+
+
+def on_list_unets(callback):
+    """register a function to be called when UI is making a list of alternative options for unet.
+    The function will be called with one argument, a list, and shall add objects of type modules.sd_unet.SdUnetOption to it."""
+
+    add_callback(callback_map['callbacks_list_unets'], callback)
