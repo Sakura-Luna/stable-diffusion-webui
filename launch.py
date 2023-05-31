@@ -32,7 +32,7 @@ def check_python_version():
     micro = sys.version_info.micro
 
     if is_windows:
-        supported_minors = [10]
+        supported_minors = [10, 11]
     else:
         supported_minors = [7, 8, 9, 10, 11]
 

@@ -62,11 +62,12 @@ def apply_unet(option=None):
 
 
 class SdUnetOption:
+    # name of related checkpoint
+    # this option will be selected automatically for unet if the name of checkpoint matches this
     model_name = None
-    """name of related checkpoint - this option will be selected automatically for unet if the name of checkpoint matches this"""
 
+    # name of the unet in UI
     label = None
-    """name of the unet in UI"""
 
     def create_unet(self):
         """returns SdUnet object to be used as a Unet instead of built-in unet when making pictures"""
@@ -88,5 +89,5 @@ def UNetModel_forward(self, x, timesteps=None, context=None, *args, **kwargs):
     if current_unet is not None:
         return current_unet.forward(x, timesteps, context, *args, **kwargs)
 
-    return ldm.modules.diffusionmodules.openaimodel.copy_of_UNetModel_forward_for_webui(self, x, timesteps, context, *args, **kwargs)
-
+    return ldm.modules.diffusionmodules.openaimodel.copy_of_UNetModel_forward_for_webui(
+        self, x, timesteps, context, *args, **kwargs)

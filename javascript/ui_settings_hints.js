@@ -24,9 +24,7 @@ onOptionsChanged(function(){
             var comment = document.createElement('DIV')
             comment.className = 'settings-comment'
             comment.innerHTML = commentBefore
-            span.parentElement.insertBefore(document.createTextNode('\xa0'), span)
             span.parentElement.insertBefore(comment, span)
-            span.parentElement.insertBefore(document.createTextNode('\xa0'), span)
         }
         if(commentAfter){
             var comment = document.createElement('DIV')
