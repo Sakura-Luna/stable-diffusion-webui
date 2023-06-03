@@ -38,9 +38,11 @@ def apply_unet(option=None):
     new_option = get_unet_option(option)
     if new_option == current_unet_option:
         return
+    if all([current_unet_option, new_option]) and new_option.model_name == current_unet_option.model_name:
+        return
 
     if current_unet is not None:
-        print(f"Dectivating unet: {current_unet.option.label}")
+        print(f"\nDeactivating unet: {current_unet.option.label}")
         current_unet.deactivate()
 
     current_unet_option = new_option
@@ -57,7 +59,7 @@ def apply_unet(option=None):
 
     current_unet = current_unet_option.create_unet()
     current_unet.option = current_unet_option
-    print(f"Activating unet: {current_unet.option.label}")
+    print(f"\nActivating unet: {current_unet.option.label}")
     current_unet.activate()
 
 
