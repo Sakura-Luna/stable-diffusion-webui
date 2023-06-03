@@ -42,7 +42,6 @@ def apply_unet(option=None):
         return
 
     if current_unet is not None:
-        shared.total_tqdm.clear()
         print(f"\nDeactivating unet: {current_unet.option.label}")
         current_unet.deactivate()
 
